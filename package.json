@@ -1,0 +1,29 @@
+{
+  "name": "@oneiro/prelude",
+  "version": "1.0.0",
+  "description": "A functional Either monad",
+  "author": "Mark Pro",
+  "license": "MIT",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "require": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "module": "index.ts",
+  "devDependencies": {
+    "@types/bun": "latest",
+    "typescript": "^5.8.3"
+  },
+  "scripts": {
+    "build": "bun build src/index.ts --outdir dist && tsc"
+  },
+  "type": "module"
+}
