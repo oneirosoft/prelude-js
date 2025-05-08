@@ -1,5 +1,5 @@
 {
-  "name": "@oneiro/prelude",
+  "name": "@oneiro/prelude-js",
   "version": "1.0.0",
   "description": "A functional Either monad",
   "author": "Mark Pro",
