@@ -1,7 +1,7 @@
 {
-  "name": "@oneiro/prelude-js",
-  "version": "1.0.0",
-  "description": "A functional Either monad",
+  "name": "@oneirosoft/prelude-js",
+  "version": "1.0.1",
+  "description": "A small, dependency-free **functional programming** library for JavaScript & TypeScript.",
   "author": "Mark Pro",
   "license": "MIT",
   "main": "dist/index.js",
@@ -17,13 +17,15 @@
       "types": "./dist/index.d.ts"
     }
   },
-  "module": "index.ts",
   "devDependencies": {
     "@types/bun": "latest",
+    "typedoc": "^0.28.4",
     "typescript": "^5.8.3"
   },
   "scripts": {
-    "build": "bun build src/index.ts --outdir dist && tsc"
+    "build": "bun build src/index.ts --outdir dist && tsc",
+    "docs:build": "typedoc --out docs src/index.ts",
+    "docs": "documentation build src/**/*.ts -f html -o docs/ --shallow"
   },
   "type": "module"
 }
