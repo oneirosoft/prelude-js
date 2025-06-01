@@ -1,6 +1,6 @@
 {
   "name": "@oneirosoft/prelude-js",
-  "version": "1.0.1",
+  "version": "2.0.4",
   "description": "A small, dependency-free **functional programming** library for JavaScript & TypeScript.",
   "author": "Mark Pro",
   "license": "MIT",
@@ -15,6 +15,150 @@
       "import": "./dist/index.js",
       "require": "./dist/index.js",
       "types": "./dist/index.d.ts"
+    },
+    "./pipe": {
+      "import": "./dist/pipe.js",
+      "types": "./dist/pipe.d.ts"
+    },
+    "./select": {
+      "import": "./dist/select.js",
+      "types": "./dist/select.d.ts"
+    },
+    "./compose": {
+      "import": "./dist/compose.js",
+      "types": "./dist/compose.d.ts"
+    },
+    "./matchWith": {
+      "import": "./dist/matchWith.js",
+      "types": "./dist/matchWith.d.ts"
+    },
+    "./matches": {
+      "import": "./dist/matches.js",
+      "types": "./dist/matches.d.ts"
+    },
+    "./unit": {
+      "import": "./dist/unit.js",
+      "types": "./dist/unit.d.ts"
+    },
+    "./types": {
+      "import": "./dist/types.js",
+      "types": "./dist/types.d.ts"
+    },
+    "./seq": {
+      "import": "./dist/seq.js",
+      "types": "./dist/seq.d.ts"
+    },
+    "./thunk": {
+      "import": "./dist/thunk.js",
+      "types": "./dist/thunk.d.ts"
+    },
+    "./when": {
+      "import": "./dist/when.js",
+      "types": "./dist/when.d.ts"
+    },
+    "./err": {
+      "import": "./dist/err.js",
+      "types": "./dist/err.d.ts"
+    },
+    "./fns": {
+      "import": "./dist/fns.js",
+      "types": "./dist/fns.d.ts"
+    },
+    "./ops": {
+      "import": "./dist/ops.js",
+      "types": "./dist/ops.d.ts"
+    },
+    "./tryCatch": {
+      "import": "./dist/tryCatch.js",
+      "types": "./dist/tryCatch.d.ts"
+    },
+    "./either": {
+      "import": "./dist/either.js",
+      "types": "./dist/monads/either.d.ts"
+    },
+    "./lazy": {
+      "import": "./dist/lazy.js",
+      "types": "./dist/monads/lazy.d.ts"
+    },
+    "./option": {
+      "import": "./dist/option.js",
+      "types": "./dist/monads/option.d.ts"
+    },
+    "./safe": {
+      "import": "./dist/safe.js",
+      "types": "./dist/monads/safe.d.ts"
+    },
+    "./safeOption": {
+      "import": "./dist/safeOption.js",
+      "types": "./dist/monads/safeOption.d.ts"
+    },
+    "./result": {
+      "import": "./dist/result.js",
+      "types": "./dist/monads/result.d.ts"
+    }
+  },
+  "typesVersions": {
+    "*": {
+      "pipe": [
+        "dist/pipe.d.ts"
+      ],
+      "select": [
+        "dist/select.d.ts"
+      ],
+      "compose": [
+        "dist/compose.d.ts"
+      ],
+      "matchWith": [
+        "dist/matchWith.d.ts"
+      ],
+      "matches": [
+        "dist/matches.d.ts"
+      ],
+      "unit": [
+        "dist/unit.d.ts"
+      ],
+      "types": [
+        "dist/types.d.ts"
+      ],
+      "seq": [
+        "dist/seq.d.ts"
+      ],
+      "thunk": [
+        "dist/thunk.d.ts"
+      ],
+      "when": [
+        "dist/when.d.ts"
+      ],
+      "err": [
+        "dist/err.d.ts"
+      ],
+      "fns": [
+        "dist/fns.d.ts"
+      ],
+      "ops": [
+        "dist/ops.d.ts"
+      ],
+      "tryCatch": [
+        "dist/tryCatch.d.ts"
+      ],
+      "either": [
+        "dist/monads/either.d.ts"
+      ],
+      "option": [
+        "dist/monads/option.d.ts"
+      ],
+      "lazy": [
+        "dist/monads/lazy.d.ts"
+      ],
+      "safe": [
+        "dist/monads/safe.d.ts"
+      ],
+      "safeOption": [
+        "dist/monads/safeOption.d.ts"
+      ],
+      "result": [
+        "dist/monads/result.d.ts"
+      ]
     }
   },
   "devDependencies": {
@@ -23,7 +167,7 @@
     "typescript": "^5.8.3"
   },
   "scripts": {
-    "build": "bun build src/index.ts --outdir dist && tsc",
+    "build": "rm -r dist && bun build src/**/*.ts --outdir dist && bun build src/index.ts --outdir dist && tsc",
     "docs:build": "typedoc --out docs src/index.ts",
     "docs": "documentation build src/**/*.ts -f html -o docs/ --shallow"
   },

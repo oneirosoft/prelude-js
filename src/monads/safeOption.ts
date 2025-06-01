@@ -2,14 +2,14 @@ import { fail } from "../err";
 import { condOr, id } from "../fns";
 import { whenDo } from "../when";
 import type { Either } from "./either";
-import type { Option } from "./option";
+import type { Optional } from "./option";
 import E from "./either";
 import {
     none,
     optional,
     unwrap as unwrapOption
 } from "./option";
-import type { Result } from "./safe";
+import type { SafeResult } from "./safe";
 import S from "./safe";
 import { compose } from "../compose";
 import { pipe } from "../pipe";
@@ -29,7 +29,7 @@ type Failure = {
 /**
  * A union of a successful Option<T> or a computation-level Failure.
  */
-export type ResultOption<T> = Failure | Option<T>;
+export type ResultOption<T> = Failure | Optional<T>;
 
 /**
  * Wraps a value in a SafeOption. Null or undefined values become None.
@@ -64,13 +64,13 @@ export const attempt = <T>(fn: () => T | null | undefined): ResultOption<T> => {
 /**
  * Type guard for checking if a SafeOption is a Some.
  */
-export const isSome = <T>(safe: ResultOption<T>): safe is Option<T> =>
+export const isSome = <T>(safe: ResultOption<T>): safe is Optional<T> =>
     safe.type === 'SOME';
 
 /**
  * Type guard for checking if a SafeOption is a None.
  */
-export const isNone = <T>(safe: ResultOption<T>): safe is Option<T> =>
+export const isNone = <T>(safe: ResultOption<T>): safe is Optional<T> =>
     safe.type === 'NONE';
 
 /**
@@ -129,7 +129,7 @@ export const unwrapOrElse = <T>(defaultValue: T) =>
 /**
  * Runs a side effect if the value is Some.
  */
-export const iter = <T>(fn: (value: T) => void) => 
+export const iter = <T>(fn: (value: T) => void) =>
     whenDo(isSome, compose(fn, unwrap<any>));
 
 /**
@@ -154,7 +154,7 @@ export const ifNone = (fn: () => void) => whenDo(isNone, fn)
 /**
  * Executes a side effect if the SafeOption is a Failure.
  */
-export const ifFailure = <T>(fn: (error: Failure) => void) => 
+export const ifFailure = <T>(fn: (error: Failure) => void) =>
     whenDo(isError, fn) as ((s: ResultOption<T>) => void)
 
 /**
@@ -185,10 +185,10 @@ export const flatten = <T>(safe: ResultOption<ResultOption<T>>): ResultOption<T>
  * Converts a SafeOption<T> into a plain Option<T>,
  * discarding Failure values by returning `none`.
  */
-export const toOption = <T>(safe: ResultOption<T>): Option<T> =>
+export const toOption = <T>(safe: ResultOption<T>): Optional<T> =>
     condOr(
         none,
-        [isSome, s => s as Option<T>],
+        [isSome, s => s as Optional<T>],
     )(safe)
 
 /**
@@ -196,7 +196,7 @@ export const toOption = <T>(safe: ResultOption<T>): Option<T> =>
  * - If `safe` is Some or None, returns Right(safe).
  * - If `safe` is Failure, returns Left(Failure).
  */
-export const toEither = <T>(safe: ResultOption<T>): Either<Failure, Option<T>> =>
+export const toEither = <T>(safe: ResultOption<T>): Either<Failure, Optional<T>> =>
     isSome(safe) || isNone(safe) ? E.right(safe) : E.left(safe);
 
 /**
@@ -211,7 +211,7 @@ export const toSafe =
         [isSome, s => S.attempt(() => unwrap(s))],
         [isNone, () => S.attempt(() => fail('Cannot unwrap None'))],
     );
-    
+
 /**
  * Functional utility module for working with SafeOption<T>.
  */

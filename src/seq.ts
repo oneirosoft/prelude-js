@@ -2,8 +2,8 @@
  * Lazy, memoized, immutable sequence abstraction.
  * Shares internal evaluation cache between all derived sequences.
  */
-import { some, none, type Option, optional, isNone, unwrap, fold, flatMap } from './monads/option';
-import { attempt, type Result } from './monads/safe';
+import { some, none, type Optional, optional, isNone, unwrap, fold, flatMap } from './monads/option';
+import { attempt, type SafeResult } from './monads/safe';
 
 /**
  * A lazy, immutable sequence of values supporting functional operations.
@@ -23,7 +23,7 @@ export type Seq<T> = Iterable<T> & {
      * @param index - The zero-based index of the element to retrieve.
      * @returns An `Option<T>` representing the element at the index.
      */
-    get(index: number): Option<T>;
+    get(index: number): Optional<T>;
 
     /**
      * Retrieves the first element of the sequence.
@@ -32,7 +32,7 @@ export type Seq<T> = Iterable<T> & {
      * 
      * @returns An `Option<T>` representing the first value, or `none` if empty.
      */
-    head(): Option<T>;
+    head(): Optional<T>;
 
     /**
      * Returns a new sequence representing all elements after the first.
@@ -128,7 +128,7 @@ export type Seq<T> = Iterable<T> & {
      * @param fn - Predicate function to test values.
      * @returns An `Option<T>` containing the first match, or `none`.
      */
-    find(fn: (value: T) => boolean): Option<T>;
+    find(fn: (value: T) => boolean): Optional<T>;
 
     /**
      * Returns `true` if at least one element satisfies the predicate.
@@ -163,7 +163,7 @@ export type Seq<T> = Iterable<T> & {
      * @param max - Maximum elements to evaluate (default: 10,000).
      * @returns A `Safe<number>` containing the count or failure.
      */
-    length(max?: number): Result<number>;
+    length(max?: number): SafeResult<number>;
 
     /**
      * Unsafely counts the number of elements by fully evaluating the sequence.
@@ -233,7 +233,7 @@ export type Seq<T> = Iterable<T> & {
      * 
      * @returns An `Option<T>` containing the last element, or `none`.
      */
-    last(): Option<T>;
+    last(): Optional<T>;
 
     /**
      * Reverses the sequence into a new sequence.
@@ -245,7 +245,7 @@ export type Seq<T> = Iterable<T> & {
      * @param max - Maximum number of values to evaluate.
      * @returns A `Safe<Seq<T>>` of reversed elements or a `Failure`.
      */
-    reverse(max?: number): Result<Seq<T>>;
+    reverse(max?: number): SafeResult<Seq<T>>;
 
     /**
      * Reverses the sequence into a new sequence.
@@ -477,7 +477,7 @@ export const create = <T>(source: () => Iterator<T>): Seq<T> => {
     const cache: T[] = [];
 
     const iterable: Seq<T> = {
-        get(idx: number): Option<T> {
+        get(idx: number): Optional<T> {
             if (idx < cache.length) return optional(cache[idx]);
             const it = source();
             for (let i = 0; i < cache.length; i++) it.next();
@@ -634,7 +634,7 @@ export const create = <T>(source: () => Iterator<T>): Seq<T> => {
         },
 
         forEach(fn) { for (const v of this) fn(v) },
-        find(fn) { for (const v of this) if (fn(v)) return some(v); return none },
+        find(fn) { for (const v of this) if (fn(v)) return optional(v); return none },
         some(fn) { for (const v of this) if (fn(v)) return true; return false },
         every(fn) { for (const v of this) if (!fn(v)) return false; return true },
         isEmpty() { return isNone(iterable.get(0)) },
@@ -760,9 +760,9 @@ export const create = <T>(source: () => Iterator<T>): Seq<T> => {
         },
 
         last() {
-            let last: Option<T> = none;
+            let last: Optional<T> = none;
             for (const value of iterable) {
-                last = some(value);
+                last = optional(value);
             }
             return last;
         },
@@ -1028,7 +1028,7 @@ export const fromArray = <T>(arr: T[]): Seq<T> => {
  *   arr => console.log(arr)
  * )(safeArray);
  */
-export const toArray = <T>(seq: Seq<T>, max?: number): Result<T[]> =>
+export const toArray = <T>(seq: Seq<T>, max?: number): SafeResult<T[]> =>
     attempt(() => {
         const arr: T[] = [];
         let count = 0;
@@ -1079,9 +1079,9 @@ export const toArrayUnsafe = <T>(seq: Seq<T>): T[] =>
  * // Generate a countdown from 5 to 1
  * const countdown = unfold(n => n > 0 ? some([n, n - 1]) : none)(5);
  */
-export const unfold = <T, U>(fn: (state: U) => Option<[T, U]>) => (seed: U): Seq<T> => {
+export const unfold = <T, U>(fn: (state: U) => Optional<[T, U]>) => (seed: U): Seq<T> => {
     return create(() => {
-        let state: Option<[T, U]> = fn(seed);
+        let state: Optional<[T, U]> = fn(seed);
         return {
             next(): IteratorResult<T> {
                 if (isNone(state)) return { done: true, value: undefined as any };
@@ -1126,7 +1126,7 @@ export const range = (start: number, end: number): Seq<number> =>
  * console.log([...firstTen]); // [0, 1, 1, 2, 3, 5, 8, 13, 21, 34]
  */
 export const fib = unfold(
-    ([a, b]: [number, number]) => 
+    ([a, b]: [number, number]) =>
         some<[number, [number, number]]>([a, [b, a + b]])
 )([0, 1]);
 

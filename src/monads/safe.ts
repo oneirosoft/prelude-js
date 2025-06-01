@@ -5,7 +5,7 @@ import { whenDo } from "../when";
 import { pipe } from "../pipe";
 import type { Either } from "./either";
 import E from "./either";
-import { none, optional, some, type Option } from "./option";
+import { none, optional, some, type Optional } from "./option";
 
 /**
  * Represents an application-level error with a cause.
@@ -25,8 +25,8 @@ type Failure = {
 /**
  * Represents a successful computation with a value of type T.
  */
-export type Success<T> = {
-    readonly type: 'SUCCESS', 
+type Success<T> = {
+    readonly type: 'SUCCESS',
     readonly value: T,
     readonly toJson: () => {
         readonly type: 'SUCCESS',
@@ -37,28 +37,28 @@ export type Success<T> = {
 /**
  * Represents a computation that may either fail with an AppError or succeed with a value of type T.
  */
-export type Result<T> = Failure | Success<T>
+export type SafeResult<T> = Failure | Success<T>
 
-const success = <T>(value: T): Result<T> =>
-    ({
+const success = <T>(value: T): SafeResult<T> =>
+({
+    type: 'SUCCESS',
+    value,
+    toJson: () => ({
         type: 'SUCCESS',
         value,
-        toJson: () => ({
-            type: 'SUCCESS',
-            value,
-        })
     })
+})
 
 
-const failure = (cause: unknown): Result<never> =>
-    ({
+const failure = (cause: unknown): SafeResult<never> =>
+({
+    type: 'FAILURE',
+    cause,
+    toJson: () => ({
         type: 'FAILURE',
         cause,
-        toJson: () => ({
-            type: 'FAILURE',
-            cause,
-        }),
-    });
+    }),
+});
 
 /**
  * Executes a function safely, wrapping the result in an Either.
@@ -69,7 +69,7 @@ const failure = (cause: unknown): Result<never> =>
  * @param fn - The function to execute safely.
  * @returns An Either containing an AppError or the successful result.
  */
-export const attempt = <T>(fn: () => T): Result<T> => {
+export const attempt = <T>(fn: () => T): SafeResult<T> => {
     try {
         return success(fn());
     } catch (error) {
@@ -92,7 +92,7 @@ export const map = <T, U>(fn: (value: T) => U) =>
  * 
  * @param fn - Function returning a new Safe<U>.
  */
-export const flatMap = <T, U>(fn: (value: T) => Result<U>) => (safe: Result<T>): Result<U> =>
+export const flatMap = <T, U>(fn: (value: T) => SafeResult<U>) => (safe: SafeResult<T>): SafeResult<U> =>
     isSuccess(safe) ? fn(safe.value) : failure(safe.cause);
 
 /**
@@ -101,7 +101,7 @@ export const flatMap = <T, U>(fn: (value: T) => Result<U>) => (safe: Result<T>):
  * @param onError - Function to handle the AppError.
  * @param onSuccess - Function to handle the success value.
  */
-export const fold = <T, U>(onSuccess: (value: T) => U, onError: (error: Failure) => U) => (safe: Result<T>): U =>
+export const fold = <T, U>(onSuccess: (value: T) => U, onError: (error: Failure) => U) => (safe: SafeResult<T>): U =>
     isSuccess(safe) ? onSuccess(safe.value) : onError(safe);
 
 /**
@@ -116,13 +116,13 @@ export const match = fold
 /**
  * Checks if the Safe<T> is an error (Left).
  */
-export const isError = <T>(safe: Result<T>): safe is Failure =>
+export const isError = <T>(safe: SafeResult<T>): safe is Failure =>
     safe.type === 'FAILURE';
 
 /**
  * Checks if the Safe<T> is a success (Right).
  */
-export const isSuccess = <T>(safe: Result<T>): safe is Success<T> =>
+export const isSuccess = <T>(safe: SafeResult<T>): safe is Success<T> =>
     safe.type === 'SUCCESS';
 
 /**
@@ -141,7 +141,7 @@ export const unwrapOr = <T>(defaultValue: T) =>
  * @param fn - Function to transform an AppError into a success value.
  */
 export const recover = <T>(fn: (error: Failure) => T) =>
-    condOr(id, [isError, compose(success, fn)]) as ((value: Result<T>) => Result<T>);
+    condOr(id, [isError, compose(success, fn)]) as ((value: SafeResult<T>) => SafeResult<T>);
 
 /**
  * Recovers from an AppError by producing a new Safe<T> computation.
@@ -150,8 +150,8 @@ export const recover = <T>(fn: (error: Failure) => T) =>
  * 
  * @param fn - Function that returns a new Safe<T> based on the error.
  */
-export const recoverWith = <T>(fn: (error: Failure) => Result<T>) =>
-    condOr(id, [isError, fn]) as ((value: Result<T>) => Result<T>);
+export const recoverWith = <T>(fn: (error: Failure) => SafeResult<T>) =>
+    condOr(id, [isError, fn]) as ((value: SafeResult<T>) => SafeResult<T>);
 
 /**
  * Executes a side-effect if the Safe<T> is an error.
@@ -159,7 +159,7 @@ export const recoverWith = <T>(fn: (error: Failure) => Result<T>) =>
  * @param fn - Function to run with the AppError.
  */
 export const ifFailure = <T>(fn: (error: Failure) => void) =>
-    whenDo(isError, fn) as (value: Result<T>) => void;
+    whenDo(isError, fn) as (value: SafeResult<T>) => void;
 
 /**
  * Executes a side-effect if the Safe<T> is a success.
@@ -167,12 +167,12 @@ export const ifFailure = <T>(fn: (error: Failure) => void) =>
  * @param fn - Function to run with the successful value.
  */
 export const ifSuccess = <T>(fn: (value: T) => void) =>
-    whenDo(isSuccess, (s: Success<T>) => pipe(s, prop('value'), fn)) as ((value: Result<T>) => void);
+    whenDo(isSuccess, (s: Success<T>) => pipe(s, prop('value'), fn)) as ((value: SafeResult<T>) => void);
 
 /**
  * Unwraps the Safe<T>, throwing an error if it is an AppError.
  */
-export const unwrap = <T>(safe: Result<T>): T => {
+export const unwrap = <T>(safe: SafeResult<T>): T => {
     if (isError(safe)) {
         throw Err.create('Unwrapping a failed Safe<T>');
     }
@@ -185,25 +185,25 @@ export const unwrap = <T>(safe: Result<T>): T => {
  * @param safes - Array of Safe<T> values.
  * @returns Array of unwrapped successful values.
  */
-export const compact = (safes: Array<Result<any>>): Array<any> =>
-    safes.filter(isSuccess).map(unwrap); 
+export const compact = (safes: Array<SafeResult<any>>): Array<any> =>
+    safes.filter(isSuccess).map(unwrap);
 
 /**
  * Performs a side-effect with the successful value.
  */
-export const iter = <T>(fn: (value: T) => void) => (safe: Result<T>): void =>
+export const iter = <T>(fn: (value: T) => void) => (safe: SafeResult<T>): void =>
     whenDo(isSuccess, compose(fn, unwrap<any>))(safe);
 
 /**
  * Performs a side-effect with both the successful value and the error.
  */
-export const biIter = <T, U>(onSuccess: (value: T) => void, onFailure: (error: Failure) => void) => (safe: Result<T>): void =>
+export const biIter = <T, U>(onSuccess: (value: T) => void, onFailure: (error: Failure) => void) => (safe: SafeResult<T>): void =>
     isSuccess(safe) ? onSuccess(safe.value) : onFailure(safe);
 
 /**
  * Performs a side-effect with the successful value and returns the Safe<T>.
  */
-export const tap = <T>(fn: (value: T) => void) => (safe: Result<T>): Result<T> => {
+export const tap = <T>(fn: (value: T) => void) => (safe: SafeResult<T>): SafeResult<T> => {
     iter(fn)(safe);
     return safe;
 }
@@ -211,23 +211,23 @@ export const tap = <T>(fn: (value: T) => void) => (safe: Result<T>): Result<T> =
 /**
  * Flattens a nested Safe<T> structure into a single Safe<T>.
  */
-export const flatten = <T>(safe: Result<Result<T>>): Result<T> =>
-    flatMap(id<Result<T>>)(safe);
+export const flatten = <T>(safe: SafeResult<SafeResult<T>>): SafeResult<T> =>
+    flatMap(id<SafeResult<T>>)(safe);
 
 /**
  * Converts a Safe<T> to an Either<Failure, T>.
  */
-export const toEither = <T>(safe: Result<T>): Either<Failure, T> =>
+export const toEither = <T>(safe: SafeResult<T>): Either<Failure, T> =>
     isSuccess(safe) ? E.right(safe.value) : E.left(safe);
 
 /**
  * Converts a Safe<T> to an Option<T>.
  */
-export const toOption = <T>(safe: Result<T>): Option<T> =>
+export const toOption =
     condOr(
         none,
-        [isSuccess, compose(optional, unwrap<any>)],
-    )(safe)
+        [isSuccess, compose(optional, unwrap)],
+    )
 
 const Safe = {
     attempt,

@@ -1,5 +1,5 @@
 import { compose } from './compose';
-import { none, optional, type Option } from './monads/option';
+import { none, optional, type Optional } from './monads/option';
 import { not } from './ops';
 
 /**
@@ -52,7 +52,7 @@ export const identity = id;
  * @example
  * noop(); // undefined
  */
-export const noop = (): void => { };
+export const noop = (_?: unknown): void => { };
 
 /**
  * Memoizes a function by caching the result based on its arguments.
@@ -183,9 +183,9 @@ export const always = <T>(value: T): (() => T) => () => value;
  * isPrimaryColor('green'); // false
  */
 export const oneOf =
-  <T extends readonly [unknown, ...unknown[]]>(...values: T) =>
-  (value: T[number]): boolean =>
-    values.includes(value);
+    <T extends readonly [unknown, ...unknown[]]>(...values: T) =>
+        (value: T[number]): boolean =>
+            values.includes(value);
 
 /**
  * Creates a predicate that checks if a value is equal to all provided values.
@@ -413,8 +413,8 @@ export const propOr = <T, K extends keyof T, Fallback>(key: K, fallback: Fallbac
  */
 export function cond<A extends any[], R>(
     ...pairs: Array<[(...args: A) => boolean, (...args: A) => R]>
-): (...args: A) => Option<R> {
-    return (...args: A): Option<R> => {
+): (...args: A) => Optional<R> {
+    return (...args: A): Optional<R> => {
         for (const [predicate, transform] of pairs) {
             if (predicate(...args)) return optional(transform(...args));
         }

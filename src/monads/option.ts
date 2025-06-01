@@ -8,10 +8,10 @@ import type { Either } from './either';
  */
 type Some<T> = {
     readonly type: 'SOME';
-    readonly value: T;
+    readonly value: NonNullable<T>;
     readonly toJSON: () => {
         readonly type: 'SOME';
-        readonly value: T;
+        readonly value: NonNullable<T>;
     }
 };
 
@@ -26,7 +26,7 @@ type None = {
 /**
  * Represents a value that may or may not be present.
  */
-export type Option<T> = None | Some<T>
+export type Optional<T> = None | Some<T>
 
 /**
  * Shared singleton None value.
@@ -41,8 +41,8 @@ export const none: None = {
 /**
  * Create a Some Option.
  */
-export const some = <T>(value: T): Option<T> =>
-    isNil(value) 
+export const some = <T>(value: NonNullable<T>): Optional<T> =>
+    isNil(value)
         ? fail('Cannot create Some with null or undefined')
         : {
             type: 'SOME',
@@ -56,7 +56,7 @@ export const some = <T>(value: T): Option<T> =>
 /**
  * Convert an Option to an Either.
  */
-export const toEither = <T>(option: Option<T>): Either<undefined, T> => {
+export const toEither = <T>(option: Optional<T>): Either<undefined, T> => {
     switch (option.type) {
         case 'NONE':
             return E.left(undefined);
@@ -68,25 +68,25 @@ export const toEither = <T>(option: Option<T>): Either<undefined, T> => {
 /**
  * Create an Option from a nullable value.
  */
-export const optional = <T>(value: T | undefined | null): Option<T> =>
+export const optional = <T>(value: T | undefined | null): Optional<T> =>
     value === undefined || value === null ? none : some(value);
 
 /**
  * Check if an Option is None.
  */
-export const isNone = <T>(option: Option<T>): option is None =>
+export const isNone = <T>(option: Optional<T>): option is None =>
     option.type === 'NONE';
 
 /**
  * Check if an Option is Some.
  */
-export const isSome = <T>(option: Option<T>): option is Some<T> =>
+export const isSome = <T>(option: Optional<T>): option is Some<T> =>
     option.type === 'SOME';
 
 /**
  * Flat-map over a Some value, chaining computations.
  */
-export const flatMap = <T, U>(fn: (value: T) => Option<U>) => (option: Option<T>): Option<U> =>
+export const flatMap = <T, U>(fn: (value: NonNullable<T>) => Optional<U>) => (option: Optional<T>): Optional<U> =>
     isSome(option) ? fn(option.value) : none;
 
 /**
@@ -98,20 +98,20 @@ export const map = <T, U>(fn: (value: T) => U) =>
 /**
  * Fold an Option into a value.
  */
-export const fold = <T, U>(onSome: (value: T) => U, onNone: () => U) => (option: Option<T>): U =>
+export const fold = <T, U>(onSome: (value: T) => U, onNone: () => U) => (option: Optional<T>): U =>
     isNone(option) ? onNone() : onSome((option as Some<T>).value);
 
 /**
  * Extract the Some value, or return a default.
  */
-export const getOrElse = <T>(defaultValue: T) => (option: Option<T>): T =>
-    isNone(option) ? defaultValue : (option as Some<T>).value;
+export const getOrElse = <T>(defaultValue: T) => (option: Optional<T>): T =>
+    isNone(option) ? defaultValue : option.value
 
 /**
  * Perform a side-effect if Some.
  */
-export const iter = <T>(fn: (value: T) => void) => (option: Option<T>): void => {
-    if (isSome(option)) fn((option as Some<T>).value);
+export const iter = <T>(fn: (value: T) => void) => (option: Optional<T>): void => {
+    if (isSome(option)) fn(option.value);
 };
 
 /**
@@ -140,7 +140,7 @@ export const iter = <T>(fn: (value: T) => void) => (option: Option<T>): void => 
  * logOption(some(42)); // logs: "Value is: 42"
  * logOption(none);     // logs: "No value found"
  */
-export const biIter = <T, U>(onSome: (value: T) => void, onNone: () => void) => (option: Option<T>): void =>
+export const biIter = <T, U>(onSome: (value: T) => void, onNone: () => void) => (option: Optional<T>): void =>
     isSome(option) ? onSome(option.value) : onNone();
 
 /**
@@ -151,7 +151,7 @@ export const ifSome = iter
 /**
  * Run a side-effect if None.
  */
-export const ifNone = <T>(fn: () => void) => (option: Option<T>): void => {
+export const ifNone = <T>(fn: () => void) => (option: Optional<T>): void => {
     if (isNone(option)) fn();
 }
 
@@ -163,34 +163,34 @@ export const match = fold
 /**
  * An unsafe operation to unwrap the Option, throwing an error if None.
  */
-export const unwrap = <T>(option: Option<T>, message?: string): T =>
-    isNone(option) 
+export const unwrap = <T>(option: Optional<T>, message?: string): T =>
+    isNone(option)
         ? fail(message ?? 'Cannot unwrap None')
         : (option as Some<T>).value
 
 /**
  * An unsafe operation to unwrap the Option, returning undefined if None.
  */
-export const unsafe = <T>(option: Option<T>): T | undefined =>
+export const unsafe = <T>(option: Optional<T>): T | undefined =>
     isNone(option) ? undefined : option.value;
 
 /**
  * Filter the Option based on a predicate.
  */
-export const filter = <T>(predicate: (value: T) => boolean) =>
-    flatMap((s: T) => predicate(s) ? some(s) : none);
+export const filter = <T>(predicate: (value: NonNullable<T>) => boolean) =>
+    flatMap((s: NonNullable<T>) => predicate(s) ? some(s) : none)
 
 /**
  * Filters an array of options and returns an array of unwrapped values.
  * @param options - Array of Option<T>
  */
-export const compact = (options: Array<Option<any>>): Array<any> =>
+export const compact = (options: Array<Optional<any>>): Array<any> =>
     options.filter(isSome).map(option => unwrap(option));
 
 /**
  * Run a side-effect if Some.
  */
-export const tap = <T>(fn: (value: T) => void) => (option: Option<T>): Option<T> => {
+export const tap = <T>(fn: (value: T) => void) => (option: Optional<T>): Optional<T> => {
     iter(fn)(option);
     return option;
 }
@@ -198,8 +198,8 @@ export const tap = <T>(fn: (value: T) => void) => (option: Option<T>): Option<T>
 /**
  * Flatten a nested Option.
  */
-export const flatten = <T>(option: Option<Option<T>>): Option<T> =>
-    flatMap(id<Option<T>>)(option);
+export const flatten = <T>(option: Optional<Optional<T>>): Optional<T> =>
+    flatMap(id<Optional<T>>)(option);
 
 /**
  * The Option module.
